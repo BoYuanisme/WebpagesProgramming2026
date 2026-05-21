@@ -61,7 +61,7 @@ if ($action === 'send_single') {
         $mail->SMTPAuth   = true;
         // 以下為你的發信帳號設定 (沿用之前的資料)
         $mail->Username   = 'a1123356@mail.nuk.edu.tw';     
-        $mail->Password   = 'iuej jotc ldkv ebys';          
+        $mail->Password   = '【請助教在此輸入測試用的應用程式密碼】';          
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
 
