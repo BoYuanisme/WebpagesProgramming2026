@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Oneirolab - 潛意識分析實驗室</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22 http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans overflow-x-hidden">
+
+    <nav class="border-b border-slate-200 bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+            <button id="menuToggleBtn" onclick="toggleSidebar(true)" class="hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition duration-200 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <h1 onclick="window.location.reload()" class="text-2xl font-black tracking-wider text-indigo-600 flex items-center gap-2 cursor-pointer hover:opacity-80 transition">
+                <span>🧠</span> ONEIROLAB
+            </h1>
+        </div>
+        <div class="flex items-center gap-4 text-sm font-medium">
+            <span id="userBalance" class="bg-amber-100 text-amber-700 border border-amber-300 px-3 py-1 rounded-full hidden shadow-sm">分析代幣: 0</span>
+            <div id="userInfo" class="text-slate-500 bg-slate-100 px-3 py-1 rounded-full">未登入</div>
+            <button id="logoutBtn" onclick="logout()" class="hidden bg-rose-500 hover:bg-rose-600 text-white px-4 py-1 rounded-full shadow-sm transition font-bold tracking-wide">
+                登出
+            </button>
+        </div>
+    </nav>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 pointer-events-none opacity-0 transition-opacity duration-300"></div>
+    <div id="sidebarMenu" class="fixed inset-y-0 left-0 w-80 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+            <div class="flex items-center gap-2 font-black text-indigo-600 tracking-wider">
+                <span>🧠</span> ONEIROLAB 導覽控制
+            </div>
+            <button onclick="toggleSidebar(false)" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="p-5 bg-slate-50 border-b border-slate-100">
+            <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">當前權限角色</div>
+            <div id="sidebarUserRole" class="text-sm font-black text-indigo-600 mt-1">未認證使用者</div>
+            <div id="sidebarUserName" class="text-xs text-slate-500 mt-0.5">---</div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+            
+            <div id="sidebarDreamerMenu" class="hidden space-y-1">
+                <div class="px-3 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">核心功能 (Dreamer)</div>
+                <a href="#" onclick="toggleSidebar(false); switchAppView('dreamer-home'); scrollToSection('dreamInputBox');" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition font-medium text-sm">
+                    記錄夢境與心理時軸
+                </a>
+                <a href="#" onclick="toggleSidebar(false); openPaymentModal();" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition font-medium text-sm">
+                    虛擬點數安全儲值
+                </a>
+                <a href="#" onclick="toggleSidebar(false); switchAppView('dreamer-public-map'); loadPublicMap();" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition font-medium text-sm">
+                    集體意識公共地圖
+                </a>
+                <a href="#" onclick="toggleSidebar(false); switchAppView('dreamer-gallery'); loadDreamGallery();" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition font-medium text-sm">
+                    夢境視覺高畫質相簿
+                </a>
+            </div>
+
+            <div id="sidebarAnalystMenu" class="hidden space-y-1">
+                <div class="px-3 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">後台研究與監控 (Analyst)</div>
+                <a href="#" onclick="toggleSidebar(false); switchAppView('analyst-home'); loadAnalystDashboard();" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl font-bold text-sm">
+                    去識別化數據監控台
+                </a>
+                <a href="#" onclick="toggleSidebar(false); switchAppView('analyst-weather'); loadWeatherReport();" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition font-medium text-sm">
+                    集體情緒天氣預報
+                </a>
+                <a href="#" onclick="toggleSidebar(false); switchAppView('analyst-keywords');" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition font-medium text-sm">
+                    社會事件關鍵詞關聯
+                </a>
+                <a href="#" onclick="toggleSidebar(false); switchAppView('analyst-moderation'); loadModerationList();" class="flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition font-medium text-sm">
+                    使用者與內容審核管理
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="loginSection" class="max-w-6xl mx-auto mt-12 md:mt-20 px-4 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-semibold tracking-wide shadow-sm">
+                ✨ 全新世代 AI 潛意識大數據探索平台
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                將私密夢境，轉化為<br>
+                <span class="bg-gradient-to-r from-indigo-600 to-teal-500 bg-clip-text text-transparent">集體心理洞察數據</span>
+            </h2>
+            <p class="text-slate-600 text-sm md:text-base max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                Oneirolab 結合先進的 AI 語言模型與去識別化技術，將您剛醒來時模糊、抽象的夢境片段，解構為具象化的心理隱喻。在這裡，您的個體意識將化為數據，與全網共同編織出社會群體的「情緒天氣預報」。
+            </p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-left">
+                <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex gap-3 hover:shadow-md transition">
+                    <div class="text-2xl p-2 bg-indigo-50 rounded-xl h-fit">🔮</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm">AI 心理學深度解構</h4>
+                        <p class="text-xs text-slate-500 mt-1">融合佛洛伊德與榮格潛意識理論，剖析夢境符號背後的現實焦慮。</p>
+                    </div>
+                </div>
+                <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex gap-3 hover:shadow-md transition">
+                    <div class="text-2xl p-2 bg-teal-50 rounded-xl h-fit">📊</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm">集體情緒天氣預報</h4>
+                        <p class="text-xs text-slate-500 mt-1">透過大數據儀表板，跨時空觀測特定事件引發的群體潛意識波動。</p>
+                    </div>
+                </div>
+                <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex gap-3 hover:shadow-md transition">
+                    <div class="text-2xl p-2 bg-amber-50 rounded-xl h-fit">🖼️</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm">多模態夢境具象化</h4>
+                        <p class="text-xs text-slate-500 mt-1">自動 Prompt 生成，重現專屬夢境視覺截圖。</p>
+                    </div>
+                </div>
+                <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex gap-3 hover:shadow-md transition">
+                    <div class="text-2xl p-2 bg-rose-50 rounded-xl h-fit">🛡️</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm">嚴格隱私去識別化</h4>
+                        <p class="text-xs text-slate-500 mt-1">紀錄預設絕對私密。您可自主決定是否匿名貢獻至集體意識地圖。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white p-8 rounded-3xl border border-slate-100 shadow-2xl w-full max-w-md mx-auto">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">🧠</div>
+                <h2 class="text-2xl font-bold text-slate-800">進入潛意識實驗室</h2>
+            </div>
+
+            <div class="flex mb-6 bg-slate-100 p-1 rounded-xl">
+                <button id="tabLogin" onclick="switchAuthMode('login')" class="flex-1 py-2 rounded-lg bg-white shadow text-indigo-600 font-bold text-sm transition-all">登入</button>
+                <button id="tabRegister" onclick="switchAuthMode('register')" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-700 font-bold text-sm transition-all">註冊帳號</button>
+            </div>
+
+            <input type="text" id="usernameInput" placeholder="請輸入使用者名稱" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center transition shadow-sm">
+            <input type="password" id="passwordInput" placeholder="請輸入密碼" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center transition shadow-sm">
+            <input type="email" id="emailInput" placeholder="請輸入 Email (如 Gmail)" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center transition shadow-sm hidden">
+            
+            <select id="roleInput" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 mb-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center transition shadow-sm hidden text-slate-600">
+                <option value="dreamer">一般使用者 (Dreamer)</option>
+                <option value="analyst">系統分析師 (Analyst)</option>
+            </select>
+
+            <div class="flex justify-end mb-4">
+                <button onclick="openForgotModal()" id="forgotPasswordLink" class="text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">忘記密碼？</button>
+            </div>
+            
+            <button id="authSubmitBtn" onclick="submitAuth()" class="w-full p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-md">登入系統</button>
+
+            <div class="flex items-center my-6">
+                <div class="flex-grow border-t border-slate-200"></div>
+                <span class="px-4 text-xs text-slate-400 font-medium">或使用</span>
+                <div class="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            <div id="googleBtnContainer" style="margin-top: 15px; display: flex; justify-content: center;"></div>
+        </div>
+    </div>
+
+    <div id="appSection" class="max-w-6xl mx-auto p-6 hidden">
+        
+        <div id="dreamerInterface" class="hidden">
+            <div id="view-dreamer-home" class="grid grid-cols-1 md:grid-cols-3 gap-8 app-view">
+                <div class="space-y-6">
+                    <div id="dreamInputBox" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-lg scroll-mt-24">
+                        <h3 class="text-lg font-bold mb-4 text-indigo-600 flex items-center gap-2"><span>📝</span> 記錄昨晚的潛意識</h3>
+                        <textarea id="dreamInput" rows="5" placeholder="請描述你昨晚的夢境內容..." class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 mb-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-700 resize-none"></textarea>
+                        <p class="text-[11px] text-slate-400 mb-4 bg-slate-50 p-2 rounded text-center">※ 每次分析將消耗 10 點代幣，觸發負面情緒將發送關懷郵件。</p>
+                        <button onclick="submitDream()" id="btnSubmit" class="w-full p-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold transition shadow-md flex justify-center items-center gap-2">
+                            <span>✨ 分析並記錄情緒</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-3xl border border-amber-100 shadow-md">
+                        <h3 class="text-md font-bold mb-3 text-amber-700 flex items-center gap-2"><span>⚡</span> 線上點數儲值</h3>
+                        <div class="flex gap-2 mb-2">
+                            <input type="number" id="payAmount" value="100" class="w-2/3 p-2 rounded-xl bg-white border border-amber-200 text-sm text-center focus:outline-none font-bold text-amber-900">
+                            <button onclick="openPaymentModal()" class="w-1/3 p-2 bg-amber-500 hover:bg-amber-600 text-white text-xs rounded-xl font-bold shadow-sm transition">線上刷卡</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-lg scroll-mt-24" id="dreamTimelineBox">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span>🕰️</span> 你的個人夢境時軸</h3>
+                        <div class="relative w-full sm:w-auto">
+                            <span class="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+                            <input type="text" id="searchInput" oninput="loadUserDreams()" placeholder="關鍵字模糊搜尋..." class="pl-8 p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-56 transition">
+                        </div>
+                    </div>
+                    <div id="dreamList" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar"></div>
+                </div>
+            </div>
+
+            <div id="view-dreamer-public-map" class="hidden app-view space-y-6">
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-8 rounded-3xl text-white shadow-lg text-center">
+                    <h2 class="text-3xl font-black mb-2">🌐 集體意識公共地圖</h2>
+                    <p class="text-indigo-100 text-sm">在這裡觀測全網自願匿名分享的夢境碎片，探索社會潛意識的共鳴。</p>
+                </div>
+                <div id="publicMapGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </div>
+            </div>
+
+            <div id="view-dreamer-gallery" class="hidden app-view space-y-6">
+                <div class="bg-gradient-to-r from-teal-500 to-emerald-600 p-8 rounded-3xl text-white shadow-lg text-center">
+                    <h2 class="text-3xl font-black mb-2">🖼️ 夢境視覺高畫質相簿</h2>
+                    <p class="text-teal-100 text-sm">將您的夢境轉化為多模態視覺影像，重新踏入夢中的奇幻維度。</p>
+                </div>
+                <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </div>
+            </div>
+        </div>
+
+
+        <div id="analystInterface" class="hidden">
+            <div id="view-analyst-home" class="space-y-6 app-view">
+                <div class="mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-indigo-800 text-center font-bold">
+                    📊 Oneirolab 去識別化數據監控台
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-lg">
+                        <h3 class="text-lg font-bold mb-4 text-slate-700 text-center">集體意識情緒分佈</h3>
+                        <div class="relative w-full aspect-square max-h-[300px] mx-auto">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-lg">
+                        <h3 class="text-lg font-bold mb-4 text-slate-700 text-center">全網心理波動脈絡</h3>
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-analyst-weather" class="hidden space-y-6 app-view">
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-lg text-center flex flex-col items-center justify-center min-h-[400px]">
+                    <h3 class="text-2xl font-black mb-2 text-slate-700">🌤️ 今日全網情緒天氣預報</h3>
+                    <p class="text-slate-400 text-sm mb-8">透過近期大眾潛意識波動，演算出的社會集體情緒寫照</p>
+                    
+                    <div class="bg-indigo-50 w-full max-w-md rounded-full py-12 px-6 shadow-inner border border-indigo-100 mb-6">
+                        <div id="weatherEmoji" class="text-8xl mb-4">--</div>
+                        <div id="weatherTitle" class="text-3xl font-black text-indigo-700 mb-2">讀取中...</div>
+                        <div id="weatherScore" class="text-sm font-bold text-slate-500">情緒指標：0.00</div>
+                    </div>
+                    <p id="weatherDesc" class="text-slate-600 text-lg">正在分析龐大的潛意識數據流...</p>
+                </div>
+            </div>
+
+            <div id="view-analyst-keywords" class="hidden space-y-6 app-view">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-lg">
+                    <h3 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">🔍 社會事件與關鍵字關聯分析</h3>
+                    <div class="flex gap-4 mb-6">
+                        <input type="text" id="keywordInput" placeholder="例如輸入：地震、水、考試..." class="flex-1 p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button onclick="searchKeywordCorrelation()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow transition">深度分析</button>
+                    </div>
+                    
+                    <div id="keywordResultBox" class="hidden p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-lg font-bold text-slate-800" id="kwTitle">分析結果</span>
+                            <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-indigo-600" id="kwStats">--</span>
+                        </div>
+                        <div id="kwList" class="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-analyst-moderation" class="hidden space-y-6 app-view">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-lg">
+                    <h3 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">🛡️ 內容審核與管理</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-4 rounded-tl-lg">ID</th>
+                                    <th class="p-4">發布者</th>
+                                    <th class="p-4 w-1/2">內容摘要</th>
+                                    <th class="p-4 text-center">公開狀態</th>
+                                    <th class="p-4 text-center rounded-tr-lg">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="moderationTableBody" class="divide-y divide-slate-100">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="aiAnalysisModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 w-full max-w-lg shadow-2xl relative">
+            <button onclick="closeAiModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            <div class="text-4xl mb-4 text-center">🔮</div>
+            <h4 class="text-xl font-black mb-6 text-slate-800 text-center">AI 心理學深度解構</h4>
+            <div id="aiAnalysisContent" class="bg-indigo-50 p-6 rounded-2xl text-sm text-indigo-900 leading-relaxed min-h-[150px] flex items-center justify-center">
+                <span class="animate-pulse">正在喚醒潛意識模型，請稍候...</span>
+            </div>
+            <button onclick="closeAiModal()" class="w-full mt-6 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md transition">我了解了</button>
+        </div>
+    </div>
+
+    <div id="payModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex justify-center items-center z-50">
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 w-80 text-center shadow-2xl">
+            <div class="text-4xl mb-4">💳</div>
+            <h4 class="text-lg font-bold mb-6 text-slate-800">安全線上金流驗證</h4>
+            <input type="text" placeholder="卡號: 4000 1234 5678 9010" class="w-full p-3 mb-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-center focus:outline-none">
+            <div class="flex gap-3 mb-6">
+                <input type="text" placeholder="MM/YY" class="w-1/2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-center focus:outline-none">
+                <input type="text" placeholder="CVC" class="w-1/2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-center focus:outline-none">
+            </div>
+            <button onclick="confirmPayment()" class="w-full p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md transition">確認付款並儲值</button>
+            <button onclick="closePaymentModal()" class="w-full p-3 text-xs text-slate-500 mt-2 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition">取消交易</button>
+        </div>
+    </div>
+
+    <div id="forgotModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex justify-center items-center z-50">
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 w-80 text-center shadow-2xl">
+            <div class="text-4xl mb-4">🔐</div>
+            <h4 class="text-lg font-bold mb-2 text-slate-800">重設密碼</h4>
+            <p class="text-xs text-slate-500 mb-6">請輸入您的帳號或信箱，我們將寄送密碼重設連結給您。</p>
+            <input type="text" id="resetEmailInput" placeholder="請輸入 Email 或帳號" class="w-full p-3 mb-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-center focus:outline-none">
+            <button onclick="sendResetEmail()" class="w-full p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md transition">發送重設連結</button>
+            <button onclick="closeForgotModal()" class="w-full p-3 text-xs text-slate-500 mt-2 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition">取消</button>
+        </div>
+    </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+
+    <script>
+        let currentUser = null;
+        let sentimentChartInstance = null;
+        let timelineChartInstance = null;
+        let authMode = 'login'; 
+
+        // 🌟 選單控制邏輯
+        function toggleSidebar(isOpen) {
+            const sidebar = document.getElementById('sidebarMenu');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (isOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('pointer-events-none', 'opacity-0');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('pointer-events-none', 'opacity-0');
+            }
+        }
+
+        // 🌟 視圖切換引擎 (SPA 核心)
+        function switchAppView(viewName) {
+            // 隱藏所有視圖
+            document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
+            // 顯示目標視圖
+            const target = document.getElementById(`view-${viewName}`);
+            if (target) target.classList.remove('hidden');
+        }
+
+        function scrollToSection(elementId) {
+            const el = document.getElementById(elementId);
+            if(el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // 🌟 集中控管登入狀態與面板配置
+        function handleInterfaceInitialization() {
+            if (!currentUser) return;
+            document.getElementById('menuToggleBtn').classList.remove('hidden');
+            const displayRoleName = currentUser.role === 'dreamer' ? '一般使用者 (Dreamer)' : '系統分析師 (Analyst)';
+            document.getElementById('sidebarUserRole').innerText = displayRoleName;
+            document.getElementById('sidebarUserName').innerText = `@${currentUser.username}`;
+
+            if (currentUser.role === 'dreamer') {
+                document.getElementById('sidebarDreamerMenu').classList.remove('hidden');
+                document.getElementById('sidebarAnalystMenu').classList.add('hidden');
+                document.getElementById('dreamerInterface').classList.remove('hidden');
+                document.getElementById('analystInterface').classList.add('hidden');
+                switchAppView('dreamer-home');
+            } else {
+                document.getElementById('sidebarAnalystMenu').classList.remove('hidden');
+                document.getElementById('sidebarDreamerMenu').classList.add('hidden');
+                document.getElementById('analystInterface').classList.remove('hidden');
+                document.getElementById('dreamerInterface').classList.add('hidden');
+                switchAppView('analyst-home');
+            }
+        }
+
+        // ================= 啟動與登入機制 =================
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('oneirolab_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('appSection').classList.remove('hidden');
+                    document.getElementById('userInfo').innerText = `${currentUser.username} (${currentUser.role})`;
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    
+                    handleInterfaceInitialization();
+
+                    if(currentUser.role === 'dreamer') {
+                        const el = document.getElementById('userBalance');
+                        el.classList.remove('hidden');
+                        el.innerText = `分析代幣: ${currentUser.balance} 點`;
+                        loadUserDreams();
+                    } else {
+                        loadAnalystDashboard();
+                    }
+                } catch (e) {
+                    localStorage.removeItem('oneirolab_user');
+                }
+            }
+        });
+
+        function switchAuthMode(mode) {
+            authMode = mode;
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const authSubmitBtn = document.getElementById('authSubmitBtn');
+            const forgotLink = document.getElementById('forgotPasswordLink');
+            const emailInput = document.getElementById('emailInput'); 
+            const roleInput = document.getElementById('roleInput'); 
+            
+            if (mode === 'login') {
+                tabLogin.className = 'flex-1 py-2 rounded-lg bg-white shadow text-indigo-600 font-bold text-sm transition-all';
+                tabRegister.className = 'flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-700 font-bold text-sm transition-all';
+                authSubmitBtn.innerText = '登入系統';
+                authSubmitBtn.className = 'w-full p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-md';
+                forgotLink.classList.remove('hidden'); 
+                emailInput.classList.add('hidden'); 
+                roleInput.classList.add('hidden'); 
+            } else {
+                tabRegister.className = 'flex-1 py-2 rounded-lg bg-white shadow text-indigo-600 font-bold text-sm transition-all';
+                tabLogin.className = 'flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-700 font-bold text-sm transition-all';
+                authSubmitBtn.innerText = '註冊新帳號';
+                authSubmitBtn.className = 'w-full p-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold transition shadow-md';
+                forgotLink.classList.add('hidden'); 
+                emailInput.classList.remove('hidden'); 
+                roleInput.classList.remove('hidden'); 
+            }
+        }
+
+        async function submitAuth() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+            const email = document.getElementById('emailInput').value.trim();
+            const role = document.getElementById('roleInput').value; 
+            
+            if (authMode === 'register' && (!username || !password || !email)) { alert('請完整輸入帳號、信箱與密碼！'); return; }
+            if (authMode === 'login' && (!username || !password)) { alert('請完整輸入帳號與密碼！'); return; }
+
+            const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
+            const bodyData = authMode === 'login' ? { username, password } : { username, password, email, role };
+            
+            try {
+                const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData) });
+                const data = await res.json();
+                
+                if(data.success) {
+                    if(authMode === 'register') {
+                        alert('✨ 註冊成功！系統已為您切換至登入模式。');
+                        switchAuthMode('login');
+                        document.getElementById('passwordInput').value = '';
+                        document.getElementById('emailInput').value = ''; 
+                    } else {
+                        currentUser = data.user;
+                        localStorage.setItem('oneirolab_user', JSON.stringify(currentUser));
+                        document.getElementById('loginSection').classList.add('hidden');
+                        document.getElementById('appSection').classList.remove('hidden');
+                        document.getElementById('userInfo').innerText = `${currentUser.username} (${currentUser.role})`;
+                        document.getElementById('logoutBtn').classList.remove('hidden');
+                        handleInterfaceInitialization();
+
+                        if(currentUser.role === 'dreamer') {
+                            const el = document.getElementById('userBalance');
+                            el.classList.remove('hidden');
+                            el.innerText = `分析代幣: ${currentUser.balance} 點`;
+                            loadUserDreams();
+                        } else {
+                            loadAnalystDashboard();
+                        }
+                    }
+                } else { alert(data.message || '操作失敗，請確認輸入資料。'); }
+            } catch (err) { alert('伺服器連線失敗！'); console.error(err); }
+        }
+
+        window.addEventListener('load', () => {
+            if (typeof google !== 'undefined') {
+                google.accounts.id.initialize({ client_id: "114973480277-0no1p1337u4gf2q9dpemb0r85q0noe9d.apps.googleusercontent.com", callback: handleGoogleLoginCallback });
+                google.accounts.id.renderButton(document.getElementById("googleBtnContainer"), { theme: "outline", size: "large", width: "100%", text: "signin_with" });
+            }
+        });
+
+        async function handleGoogleLoginCallback(response) {
+            const selectedRole = document.getElementById('roleInput').value || 'dreamer';
+            try {
+                const res = await fetch('/api/google-login', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: response.credential, role: selectedRole })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('oneirolab_user', JSON.stringify(currentUser));
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('appSection').classList.remove('hidden');
+                    document.getElementById('userInfo').innerText = `${currentUser.username} (${currentUser.role})`;
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    handleInterfaceInitialization();
+
+                    if (currentUser.role === 'dreamer') {
+                        const el = document.getElementById('userBalance');
+                        el.classList.remove('hidden');
+                        el.innerText = `分析代幣: ${currentUser.balance} 點`;
+                        loadUserDreams();
+                    } else {
+                        loadAnalystDashboard();
+                    }
+                } else { alert('Google 驗證失敗：' + data.message); }
+            } catch (err) { alert('連線至潛意識伺服器失敗'); }
+        }
+
+        function openForgotModal() { document.getElementById('forgotModal').classList.remove('hidden'); }
+        function closeForgotModal() { document.getElementById('forgotModal').classList.add('hidden'); }
+        
+        async function sendResetEmail() {
+            const target = document.getElementById('resetEmailInput').value;
+            if(!target) { alert("請輸入要重設的帳號或信箱！"); return; }
+            alert(`📧 重設密碼信件已發送！\n(前端展示)`);
+            closeForgotModal();
+            document.getElementById('resetEmailInput').value = '';
+        }
+
+        async function logout() {
+            try { await fetch('/api/logout', { method: 'POST' }); } catch (error) {}
+            currentUser = null;
+            localStorage.removeItem('oneirolab_user'); 
+            window.location.reload();
+        }
+
+        // ================= Dreamer 核心邏輯 =================
+        function openPaymentModal() { document.getElementById('payModal').classList.remove('hidden'); }
+        function closePaymentModal() { document.getElementById('payModal').classList.add('hidden'); }
+
+        async function confirmPayment() {
+            const amount = parseInt(document.getElementById('payAmount').value) || 0;
+            try {
+                const res = await fetch('/api/payment', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id, amount })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    currentUser.balance = data.newBalance;
+                    localStorage.setItem('oneirolab_user', JSON.stringify(currentUser));
+                    document.getElementById('userBalance').innerText = `分析代幣: ${currentUser.balance} 點`;
+                    closePaymentModal();
+                    alert(`💳 付款成功！已成功儲值 ${amount} 點`);
+                } else { alert('儲值失敗！'); }
+            } catch (err) { alert('交易發送失敗，請確認伺服器連線。'); }
+        }
+
+        async function submitDream() {
+            const content = document.getElementById('dreamInput').value.trim();
+            if(!content) { alert('請輸入你的夢境內容再進行分析！'); return; }
+            if(!currentUser) return;
+            if(currentUser.balance < 10) { alert('餘額不足，請先線上儲值點數！'); return; }
+
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<span class="animate-spin text-lg">🌀</span> <span>正在分析夢境潛意識...</span>`;
+            btn.classList.replace('bg-teal-500', 'bg-slate-400');
+
+            try {
+                const res = await fetch('/api/dreams', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id, content })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    currentUser.balance = data.newBalance !== undefined ? data.newBalance : Math.max(0, currentUser.balance - 10);
+                    localStorage.setItem('oneirolab_user', JSON.stringify(currentUser));
+                    document.getElementById('userBalance').innerText = `分析代幣: ${currentUser.balance} 點`;
+                    document.getElementById('dreamInput').value = '';
+                    await loadUserDreams();
+                } else { alert(data.message || '分析失敗！'); }
+            } catch (error) { alert('連線失敗或後端程式出錯！'); } 
+            finally {
+                btn.disabled = false;
+                btn.classList.replace('bg-slate-400', 'bg-teal-500');
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        async function loadUserDreams() {
+            if(!currentUser) return;
+            try {
+                const search = document.getElementById('searchInput').value;
+                const res = await fetch(`/api/dreams?user_id=${currentUser.id}&search=${search}`);
+                const dreams = await res.json();
+                const listEl = document.getElementById('dreamList');
+                
+                listEl.innerHTML = dreams.map(d => {
+                    const timeString = new Date(d.created_at).toLocaleString();
+                    let isPositive = d.sentiment === '正向' || d.sentiment_score > 60 || (d.sentiment_score > 0 && d.sentiment_score <= 1);
+                    let isNegative = d.sentiment === '負向' || d.sentiment_score < 40 || d.sentiment_score < 0;
+                    
+                    let badgeColorClass = 'bg-slate-100 text-slate-600 border border-slate-200';
+                    if (isPositive && d.sentiment !== '負向') badgeColorClass = 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                    else if (isNegative && d.sentiment !== '正向') badgeColorClass = 'bg-rose-100 text-rose-700 border border-rose-200';
+
+                    const publicBtnText = d.is_public ? '🌐 已發布地圖' : '🔒 設為公開';
+                    const publicBtnClass = d.is_public ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50';
+
+                    return `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col gap-3 hover:shadow-md transition-all">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold shadow-sm ${badgeColorClass}">${d.sentiment} (${d.sentiment_score})</span>
+                            <span class="text-xs text-slate-400 font-medium">${timeString}</span>
+                        </div>
+                        <p class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">${d.content}</p>
+                        
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button onclick="togglePublicStatus(${d.id})" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${publicBtnClass}" id="pubBtn-${d.id}">
+                                ${publicBtnText}
+                            </button>
+                            <button onclick="triggerDeepAnalysis(${d.id})" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold transition">
+                                🔮 AI 深度解構
+                            </button>
+                            <button onclick="generateDreamImage(${d.id})" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-600 rounded-lg text-xs font-bold transition">
+                                🖼️ 產生視覺相片
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            } catch (err) { console.error("載入夢境失敗:", err); }
+        }
+
+        // ================= Dreamer 擴充功能 =================
+        async function togglePublicStatus(id) {
+            try {
+                const res = await fetch(`/api/dreams/${id}/toggle-public`, { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    loadUserDreams(); // 重新整理列表
+                }
+            } catch (err) {}
+        }
+
+        async function triggerDeepAnalysis(id) {
+            document.getElementById('aiAnalysisModal').classList.remove('hidden');
+            const contentBox = document.getElementById('aiAnalysisContent');
+            contentBox.innerHTML = '<span class="animate-pulse">正在喚醒 AI 精神分析模型，剖析潛意識符號...</span>';
+            
+            try {
+                const res = await fetch(`/api/dreams/${id}/analyze-deep`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    contentBox.innerHTML = data.analysis.replace(/\n/g, '<br>');
+                } else {
+                    contentBox.innerHTML = '分析失敗，請稍後再試。';
+                }
+            } catch (err) {
+                contentBox.innerHTML = '網路連線失敗。';
+            }
+        }
+        function closeAiModal() { document.getElementById('aiAnalysisModal').classList.add('hidden'); }
+
+        async function generateDreamImage(id) {
+            alert('🖼️ 系統已排程產生圖像！請稍候前往「夢境視覺高畫質相簿」查看。');
+            try {
+                await fetch(`/api/dreams/${id}/generate-image`, { method: 'POST' });
+            } catch (err) {}
+        }
+
+        async function loadPublicMap() {
+            const grid = document.getElementById('publicMapGrid');
+            grid.innerHTML = '<div class="col-span-full text-center text-slate-500 py-10">讀取中...</div>';
+            try {
+                const res = await fetch('/api/dreams/public');
+                const dreams = await res.json();
+                
+                grid.innerHTML = dreams.map(d => `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow hover:shadow-lg transition">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="px-2 py-1 bg-slate-100 text-slate-500 rounded text-xs font-bold">匿名者</span>
+                            <span class="text-xs text-indigo-500 font-bold">分數: ${d.sentiment_score}</span>
+                        </div>
+                        <p class="text-sm text-slate-700 leading-relaxed mb-4">${d.content}</p>
+                        <div class="text-right text-[10px] text-slate-400">${new Date(d.created_at).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            } catch (err) { grid.innerHTML = '無法載入地圖'; }
+        }
+
+        async function loadDreamGallery() {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = '<div class="col-span-full text-center text-slate-500 py-10">讀取中...</div>';
+            try {
+                const res = await fetch(`/api/dreams?user_id=${currentUser.id}`);
+                const dreams = await res.json();
+                const imagesHTML = dreams.filter(d => d.image_url).map(d => `
+                    <div class="bg-white rounded-2xl border border-slate-100 shadow overflow-hidden group">
+                        <div class="h-48 overflow-hidden bg-slate-100 relative">
+                            <img src="${d.image_url}" alt="夢境圖" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        </div>
+                        <div class="p-4">
+                            <p class="text-sm text-slate-700 truncate mb-1">${d.content}</p>
+                            <span class="text-xs text-slate-400">${new Date(d.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `).join('');
+                grid.innerHTML = imagesHTML || '<div class="col-span-full text-center text-slate-500 py-10">您尚未產生任何夢境相片。請至首頁點擊「產生視覺相片」。</div>';
+            } catch (err) {}
+        }
+
+
+        // ================= Analyst 核心邏輯 =================
+        async function loadAnalystDashboard() {
+            try {
+                const res = await fetch('/api/analyst/dashboard');
+                const data = await res.json();
+                const textColor = '#475569'; 
+                const colorMap = { '正向': '#10b981', '中性': '#cbd5e1', '負向': '#f43f5e' };
+
+                const ctx1 = document.getElementById('sentimentChart').getContext('2d');
+                if (sentimentChartInstance) sentimentChartInstance.destroy();
+                sentimentChartInstance = new Chart(ctx1, {
+                    type: 'pie',
+                    data: {
+                        labels: data.summary.map(s => s.sentiment),
+                        datasets: [{
+                            data: data.summary.map(s => s.count),
+                            backgroundColor: data.summary.map(s => colorMap[s.sentiment]),
+                            borderWidth: 2, borderColor: '#ffffff'
+                        }]
+                    },
+                    options: { plugins: { legend: { labels: { color: textColor, font: {family: 'sans-serif'} } } } }
+                });
+
+                const ctx2 = document.getElementById('timelineChart').getContext('2d');
+                if (timelineChartInstance) timelineChartInstance.destroy();
+                
+                timelineChartInstance = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: data.timeline.map(t => new Date(t.created_at).toLocaleTimeString()),
+                        datasets: [{
+                            label: '集體意識波動值',
+                            data: data.timeline.map(t => t.sentiment_score),
+                            borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            tension: 0.4, fill: true, pointBackgroundColor: '#6366f1', pointBorderColor: '#fff', pointBorderWidth: 2
+                        }]
+                    },
+                    options: { 
+                        scales: { y: { ticks: { color: textColor }, grid: { color: '#f1f5f9' } }, x: { ticks: { color: textColor }, grid: { display: false } } }, 
+                        plugins: { legend: { labels: { color: textColor } } } 
+                    }
+                });
+            } catch (err) {}
+        }
+
+        async function loadWeatherReport() {
+            try {
+                const res = await fetch('/api/analyst/weather');
+                const data = await res.json();
+                document.getElementById('weatherEmoji').innerText = data.emoji;
+                document.getElementById('weatherTitle').innerText = data.weather;
+                document.getElementById('weatherScore').innerText = `綜合指標分數: ${parseFloat(data.avgScore).toFixed(2)} (${data.totalDreams} 筆樣本)`;
+                document.getElementById('weatherDesc').innerText = data.desc;
+            } catch (err) {}
+        }
+
+        async function searchKeywordCorrelation() {
+            const keyword = document.getElementById('keywordInput').value.trim();
+            if(!keyword) return;
+            try {
+                const res = await fetch(`/api/analyst/keywords?keyword=${encodeURIComponent(keyword)}`);
+                const data = await res.json();
+                
+                document.getElementById('keywordResultBox').classList.remove('hidden');
+                document.getElementById('kwTitle').innerText = `「${keyword}」的關聯結果`;
+                document.getElementById('kwStats').innerText = `總計 ${data.count} 筆，均值 ${parseFloat(data.avgScore).toFixed(2)}`;
+                
+                const listEl = document.getElementById('kwList');
+                if(data.count === 0) {
+                    listEl.innerHTML = '<p class="text-sm text-slate-500 py-2">查無相關結果</p>';
+                } else {
+                    listEl.innerHTML = data.matches.map(m => `
+                        <div class="p-3 bg-white rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
+                            <span class="text-sm text-slate-700 truncate w-3/4">${m.content}</span>
+                            <span class="text-xs font-bold text-indigo-500">${m.sentiment_score}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {}
+        }
+
+        async function loadModerationList() {
+            const tbody = document.getElementById('moderationTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">讀取中...</td></tr>';
+            try {
+                const res = await fetch('/api/analyst/moderation');
+                const rows = await res.json();
+                
+                tbody.innerHTML = rows.map(r => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 font-mono text-xs text-slate-400">#${r.id}</td>
+                        <td class="p-4 font-bold text-slate-700">@${r.username || '未知'}</td>
+                        <td class="p-4 truncate max-w-xs" title="${r.content}">${r.content}</td>
+                        <td class="p-4 text-center">
+                            ${r.status === 'deleted' ? '<span class="text-rose-500 font-bold text-xs">已隱藏</span>' : 
+                             (r.is_public ? '<span class="text-indigo-500 text-xs">公開</span>' : '<span class="text-slate-400 text-xs">私密</span>')}
+                        </td>
+                        <td class="p-4 text-center">
+                            ${r.status !== 'deleted' ? `<button onclick="hideContent(${r.id})" class="px-2 py-1 bg-rose-50 text-rose-600 rounded text-xs font-bold hover:bg-rose-100 transition">隱藏</button>` : '-'}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch(err) {}
+        }
+
+        async function hideContent(id) {
+            if(!confirm('確定要隱藏此內容嗎？')) return;
+            try {
+                const res = await fetch(`/api/analyst/moderation/${id}/hide`, { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    alert('已成功隱藏該內容');
+                    loadModerationList();
+                }
+            } catch (err) {}
+        }
+    </script>
+</body>
+</html>
